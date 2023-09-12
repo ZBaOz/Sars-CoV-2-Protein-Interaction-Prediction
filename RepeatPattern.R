@@ -1,32 +1,30 @@
 install.packages("xlsx")
 library(xlsx)
 
-
-
-#regex kullanýmý için
+#library for regex
 install.packages("stringr")
 library("stringr")
 
 install.packages("writexl")
 library("writexl")
 
-#negatif protinlerin sekanslarýný çekmek için
 install.packages("protr")
 library("protr")
 
-#dogadaki 20 aminoasit
+#aminoacid vector
 aa <- c('A','R','N','D','C','E','Q','G','H','I','L','K','M','F','P','S','T','W','Y','V')
 
-setwd("C:/Users/zeyne/Desktop/Covid-PPI Proje/Veriler/")
+setwd("Veriler/")
 
 
-#HER BÝR PROTEÝNDEKÝ TEKRAR EDEN AA PATTERN
+#REPEATED PATTERNS IN EACH PROTEINS
+#SINCE THERE ARE 20 AMINO ACIDS, EACH PROTEIN IS REPRESENTED BY A 20-DIMENSIONAL VECTOR.
 
-#Pozitif Proteinler
-#pozitif protein sekanslarý dosyada 3. sheette 2. sütunda
+#Read positive proteins from the dataset
 pozProt <- read.xlsx(file = 'Proteinler.xlsx', 3, header=TRUE)
 pozProt=as.character(as.vector(pozProt[,2]))
 
+#Repeat Pattern features for positive protein
 RepPatPoz1=matrix(nrow=length(pozProt),ncol=20)
 colnames(RepPatPoz1) = aa
 RepPatPoz1 <- data.frame(RepPatPoz1)
@@ -52,13 +50,13 @@ for (i in 1:length(pozProt))
     RepPatPoz1[i,j]=toplam
   }
 }
-write_xlsx(RepPatPoz1,"C:/Users/zeyne/Desktop/RepPattern.xlsx")
+write_xlsx(RepPatPoz1,"RepPattern.xlsx")
 
-#Covid Proteinleri
+#read covid proteins from the dataset
 covidProt <- read.xlsx(file = 'Proteinler.xlsx', 2, header=TRUE)
 covidProt=as.character(as.vector(covidProt[,2]))
 
-#her bir proteindeki tekrar eden single aminoasitler
+#Repeated aminoacids for each covid protein
 RepPatCovid=matrix(nrow=length(covidProt),ncol=20)
 colnames(RepPatCovid) = aa
 RepPatCovid <- data.frame(RepPatCovid)
@@ -84,19 +82,20 @@ for (i in 1:length(covidProt))
     RepPatCovid[i,j]=toplam
   }
 }
-write_xlsx(RepPatCovid,"C:/Users/zeyne/Desktop/RepPatternCov.xlsx")
+write_xlsx(RepPatCovid,"RepPatternCov.xlsx")
 
 
-#Negatif Proteinler
-negProt <- read.xlsx(file = 'negatifData3.xlsx', 1, header=TRUE)
+#Read Negative dataset from the dataset.
+#Since there are 3 negative datasets this process should repeat for each negative dataset
+negProt <- read.xlsx(file = 'negatifData.xlsx', 1, header=TRUE)
 negProt=as.character(as.vector(negProt[,1]))
 
-#her bir proteindeki tekrar eden single aminoasitler
+#Repeated aminoacids for each negative protein
 RepPatNeg=matrix(nrow=length(negProt),ncol=20)
 colnames(RepPatNeg) = aa
 RepPatNeg <- data.frame(RepPatNeg)
 
-for (i in 284:length(negProt))
+for (i in 1:length(negProt))
 {
   proteinID=negProt[i]
   protein<-getUniProt(proteinID)
@@ -118,19 +117,19 @@ for (i in 284:length(negProt))
     RepPatNeg[i,j]=toplam
   }
 }
-write_xlsx(RepPatNeg,"C:/Users/zeyne/Desktop/RepPatternNeg.xlsx")
+write_xlsx(RepPatNeg,"RepPatternNeg.xlsx")
 
 Sys.time()
 
-#parca=matrix()
 
-#HER BÝR PROTEÝN 5 PARÇAYA BÖLÜNDÜ HER BÝR PARÇADAKÝ TEKRAR EDEN AA PATTERN
+
+#EACH PROTEIN SPLITTED T 5 EQUAL SIZE SUB SEQUENCE. REPEAT PATTERNS ARE EXTRACTED FOR EACH SUB SEQUENCE 
+#THERE ARE 0 AMINO ACIDS AND 5 SUB SEQUENCE FOR EACH PROTEIN. THEREFORE EACH PROTEIN IS REPRESENTED WITH 5X20 SIZE VECTOR
 
 sutun=c(aa,aa,aa,aa,aa)
 
 
-#Pozitif Proteinler
-#pozitif protein sekanslarý dosyada 3. sheette 2. sütunda
+#POSITIVE PROTEINS
 pozProt <- read.xlsx(file = 'Proteinler.xlsx', 3, header=TRUE)
 pozProt=as.character(as.vector(pozProt[,2]))
 
@@ -176,14 +175,12 @@ for (i in 1:length(pozProt))
   }
 }
 
-write_xlsx(RepPatPozParcali,"C:/Users/zeyne/Desktop/RepPattern.xlsx")
+write_xlsx(RepPatPozParcali,"RepPattern.xlsx")
 
-#Covid Proteinleri
+#COVID PROTEINS
 covidProt <- read.xlsx(file = 'Proteinler.xlsx', 2, header=TRUE)
 covidProt=as.character(as.vector(covidProt[,2]))
 
-covidProt=covidProt[-c(32,33)]
-covidProt[31]
 
 RepPatCovidParcali=matrix(nrow=length(covidProt),ncol=100)
 colnames(RepPatCovidParcali) = sutun
@@ -227,11 +224,11 @@ for (i in 1:length(covidProt))
   }
 }
 
-write_xlsx(RepPatCovidParcali,"C:/Users/zeyne/Desktop/RepPatternCov.xlsx")
+write_xlsx(RepPatCovidParcali,"RepPatternCov.xlsx")
 
 
-#Negatif Proteinler
-negProt <- read.xlsx(file = 'negatifData3.xlsx', 1, header=TRUE)
+#NEGATIVE PROTEINS
+negProt <- read.xlsx(file = 'negatifData.xlsx', 1, header=TRUE)
 negProt=as.character(as.vector(negProt[,1]))
 
 RepPatNegParcali=matrix(nrow=length(negProt),ncol=100)
@@ -278,6 +275,5 @@ for (i in 1:length(negProt))
 }
 Sys.time()
 
-write_xlsx(RepPatNegParcali,"C:/Users/zeyne/Desktop/RepPatternNeg.xlsx")
+write_xlsx(RepPatNegParcali,"RepPatternNeg.xlsx")
 
-covidProt <- covidProt[-c(32,33)]
