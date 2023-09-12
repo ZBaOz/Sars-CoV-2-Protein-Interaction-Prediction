@@ -4,9 +4,9 @@ library(xlsx)
 install.packages("writexl")
 library("writexl")
 
-setwd("C:/Users/zeyne/Desktop/Kaggle Data/Proje2/Veriler")
+setwd("/Veriler")
 
-#pozitif human proteinler için protein idleri al
+#Get protein ids for positive proteins.
 pozHumProt <- read.xlsx(file = 'Proteinler.xlsx', 1, header=TRUE)
 pozHumProt=as.character(as.vector(pozHumProt[,2]))
 
@@ -15,52 +15,52 @@ etkilesimSayi <- read.xlsx(file = 'Proteinler.xlsx', 7, header=TRUE)
 covidProt <- read.xlsx(file = 'Proteinler.xlsx', 2, header=TRUE)
 covidProt=as.character(as.vector(covidProt[1:27,3]))
 
-predicted <- read.xlsx(file = 'C:/Users/zeyne/Desktop/Kaggle Data/Proje2/Makale1/Predicted Proteins.xlsx', 1, header=TRUE)
+predicted <- read.xlsx(file = 'Predicted Proteins.xlsx', 1, header=TRUE)
 
 
 
-#uniprotr kütüphanesi protein ismine göre GO termleri çekmek için. 'GetProteinGOInfo' fonksiyonu ile yapýyor bunu
+#'uniprotr' library is used finding common GO terms
 install.packages("UniprotR")
 library("UniprotR")
 
-#regex kullanmak için
+#library for regex
 #install.packages("stringr")
 library("stringr")
 
 
-#POZÝTÝF HUMAN PROTEÝNLER ÝLE ORTAK GO SAYILARI BULUNUR
+#FIND NUMBER OF COMMON GO TERMS WITH POSITIVE PROTEINS.
+#THERE ARE 3 SUB ONTOLOGIES: BP, CC AND MF. THEREFORE NUMBER OF COLUMNS IS UP TO 3 TIMES THE NUMBER OF INTERACTIONS
 ortakGOSayi=matrix(nrow=nrow(predicted),ncol=(length(etkilesimSayi)*3))
 
-for (predIndis in 248:nrow(predicted))
-#for (predIndis in 119:123)
+for (predIndis in 1:nrow(predicted))
 {
   print(predIndis)
   k=1
   protIndis=1
-  #bir covid proteinin etkileþimli olduðu tüm insan proteinlerinin 3 alanda GO terimleri çýkarýlýr.
-  #dýþ döngü covid proteinlerini, iç döngü ise bir covid proteini ile etkileþimli insan proteinlerini dolaþýr.
+  #GO terms are extracted for 3 sub-ontologies of all human proteins with which a covid protein interacts. The outer loop circulates covid proteins, 
+  #and the inner loop circulates human proteins that interact with a covid protein.
   for (i in 1:length(etkilesimSayi))
   {
     sayi=etkilesimSayi[1,i]
     BPGOTerms=""
     CCGOTerms=""
     MFGOTerms=""
-    #i. covid proteini ile etkileþimli insan proteinlerinin unique GO terimlerini çýkar
+    #extract unique GO terms of human proteins interacting with i. covid protein
     for (j in 1:sayi)
     {
-      #sýradaki proteinin GO terimlerini al
+      #get GO terms of next proteins
       GOObj<-GetProteinGOInfo(pozHumProt[protIndis])
-      #BP tabanlý GO terimleri ekle
+      #BP GO terms
       x=str_extract_all(GOObj$Gene.ontology..biological.process,"GO:[0-9]+")
       x=unlist(x,use.names=F)
       BPGOTerms=c(BPGOTerms,x)
       
-      #MF tabanlý GO terimleri ekle
+      #MF GO terms
       x2=str_extract_all(GOObj$Gene.ontology..molecular.function.,"GO:[0-9]+")
       x2=unlist(x2,use.names=F)
       MFGOTerms=c(MFGOTerms,x2)
       
-      #CC tabanlý GO terimleri ekle
+      #CC GO terms
       x3=str_extract_all(GOObj$Gene.ontology..cellular.component.,"GO:[0-9]+")
       x3=unlist(x3,use.names=F)
       CCGOTerms=c(CCGOTerms,x3)
@@ -71,32 +71,33 @@ for (predIndis in 248:nrow(predicted))
     MFGOTerms=unique(MFGOTerms)
     CCGOTerms=unique(CCGOTerms)
     
-    #Covid Proteinleri için GO terimler çýkarýlýr
+    #Extract GO terms fo Covid Proteins
     GOObjCov<-GetProteinGOInfo(covidProt[i])
+    #BP GO terms
     xBpCov=str_extract_all(GOObjCov$Gene.ontology..biological.process,"GO:[0-9]+")
     xBpCov=unlist(xBpCov,use.names=F)
     
-    #MF tabanlý GO terimleri ekle
+    #MF GO terms
     xMfCov=str_extract_all(GOObjCov$Gene.ontology..molecular.function.,"GO:[0-9]+")
     xMfCov=unlist(xMfCov,use.names=F)
     
-    #CC tabanlý GO terimleri ekle
+    #CC GO terms
     xCcCov=str_extract_all(GOObjCov$Gene.ontology..cellular.component.,"GO:[0-9]+")
     xCcCov=unlist(xCcCov,use.names=F)
     
-    #pred protein için GO terimleri çýkarýlýr.
+    #Extract GO terms for predicted proteinsd.
     #predIndis=6
-    #GOObjH<-GetProteinGOInfo("A0A481SW80")
+   
     GOObjH<-GetProteinGOInfo(predicted[predIndis,1])
     if (is.na(GOObjH$Gene.ontology..biological.process))
     {
-      print("BP yok")
+      print("No BP term")
       ortakGOSayi[predIndis,k]=0
       covidGOSayi[predIndis,k]=0
     }
     else
     {
-      #BP tabanlý GO terimlerini al, ortak BP terim sayýsýný matrise kaydet
+      #Get BP GO terms. Save number of common BP terms to the matrix.
       x=str_extract_all(GOObjH$Gene.ontology..biological.process,"GO:[0-9]+")
       x=unlist(x,use.names=F)
       a=intersect(BPGOTerms,x)
@@ -106,13 +107,13 @@ for (predIndis in 248:nrow(predicted))
     }
     if (is.na(GOObjH$Gene.ontology..molecular.function.))
     {
-      print("MF yok")
+      print("no MF")
       ortakGOSayi[predIndis,(k+1)]=0
       covidGOSayi[predIndis,(k+1)]=0
     }
     else
     {
-      #MF tabanlý GO terimlerini al, ortak MF terim sayýsýný matrise kaydet
+      #Get MF GO terms. Save number of common MF terms to the matrix.
       x=str_extract_all(GOObjH$Gene.ontology..molecular.function.,"GO:[0-9]+")
       x=unlist(x,use.names=F)
       a=intersect(MFGOTerms,x)
@@ -122,13 +123,13 @@ for (predIndis in 248:nrow(predicted))
     }
     if (is.na(GOObjH$Gene.ontology..cellular.component.))
     {
-      print("CC yok")
+      print("no CC")
       ortakGOSayi[predIndis,(k+2)]=0
       covidGOSayi[predIndis,(k+2)]=0
     }
     else
     {
-      #CC tabanlý GO terimlerini al, ortak CC terim sayýsýný matrise kaydet
+      #Get CC GO terms. Save number of common CC terms to the matrix.
       x=str_extract_all(GOObjH$Gene.ontology..cellular.component.,"GO:[0-9]+")
       x=unlist(x,use.names=F)
       a=intersect(CCGOTerms,x)
@@ -143,8 +144,7 @@ for (predIndis in 248:nrow(predicted))
 toplamGOSayi=matrix(nrow=nrow(predicted),ncol=length(etkilesimSayi))
 
 
-#for (i in 1:nrow(predicted))
-for (i in 1:285)
+for (i in 1:nrow(predicted))
 {
   indis=1
   for (k in 1:length(etkilesimSayi))
@@ -155,5 +155,5 @@ for (i in 1:285)
 }
 
 toplamGOSayi2 <- data.frame(toplamGOSayi)
-write_xlsx(toplamGOSayi2,"C:/Users/zeyne/Desktop/Kaggle Data/Proje2/Veriler/ToplamOrtakGOSayi2.xlsx")
+write_xlsx(toplamGOSayi2,"ToplamOrtakGOSayi2.xlsx")
 
