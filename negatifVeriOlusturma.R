@@ -1,22 +1,22 @@
 install.packages("xlsx")
 library(xlsx)
-setwd("C:/Users/zeyne/Desktop/Covid-PPI Proje/Veriler")
+setwd("/Veriler")
 
-#pozitif insan proteinleri dosyadan okunur
+#READ POSITIVE PROTEINS FROM THE DATASET
 pozitifProteinler <- read.xlsx(file = 'Proteinler.xlsx', 1, header=TRUE)
 pozitifProteinler =as.character(as.vector(pozitifProteinler[,2]))
 
-#tüm aday proteinleri dosyadan okunur
+#READ ALL CANDIDATE PROTEINS FROM THE DATASET
 adayProteinler <- read.xlsx(file = 'AdayProteinler.xlsx', 1, header=TRUE)
 adayProteinler <- adayProteinler[,1]
 
-#aday proteinler ile pozitif proteinlerin sekanslarý alýnýr.
+#GET PROTEIN SEQUENCES FOR  POSITIVE PROTEINS AND CANDIDATE PROTEINS
 install.packages("protr")
 library("protr")
 pozProtSeq<-getUniProt(pozitifProteinler)
 adayProtSeq<-getUniProt(adayProteinler)
 
-#pairwise alignment için kütüphane tanýmlarý
+#LIBRARY DEFINITION FOR PAIRWISE ALIGNMENT
 if (!requireNamespace("BiocManager", quietly=TRUE))
   install.packages("BiocManager")
 BiocManager::install("pairwiseAlignment")
@@ -26,21 +26,19 @@ data(BLOSUM62)
 install.packages("writexl")
 library("writexl")
 
-#pozitif veri kümesi ile aday proteinlerin identity deðerleri 'identity' matrisinde tutulur.
-#matrisin satýr isimleri pozitif protein id'ler, sütun isimleri ise aday protein id ler olarak atandý
+#identity values for positive and candidate proteins are keep in 'identity matrix'
 identity = matrix(NA,nrow=length(pozitifProteinler),ncol=length(adayProteinler))
 rownames(identity) = pozitifProteinler
 colnames(identity) = adayProteinler
 identity <- data.frame(identity)
 dim(identity)
 
-#Pozitif veri kümesindeki proteinler ile aday veri kümesindeki proteinlerin amino asit sekanslarý
-#uniprotdan çekilir. For döngüsünde, her bir pozitif proteinin her bir aday protein ile sequence identity
-#skoru hesaplanýr. sonuçlar 'identity' matrisine alýnýr.
+#The amino acid sequences of the proteins in the positive data set and the proteins in the candidate data set are drawn from the uniprot. 
+#In the for loop, the sequence identity score of each positive protein with each candidate protein is calculated. The results are taken into the 'identity' matrix.
 for (i in 332:length(pozitifProteinler))
 {
   print(i)
-  #s1 <- getUniProt(pozitifProteinler[183])
+  #s1 <- getUniProt(pozitifProteinler[i])
   s1=pozProtSeq[i]
   s1=unlist(s1,use.names=F)
   for (j in 1:length(adayProteinler))
@@ -51,21 +49,20 @@ for (i in 332:length(pozitifProteinler))
     palign1 <- pairwiseAlignment(s1, s2, substitutionMatrix = "BLOSUM62",type="global",gapOpening=8, gapExtension = 4)
     identity[i,j]=pid(palign1)
   }
-  write_xlsx(identity,"C:/Users/zeyne/Desktop/identity.xlsx")
+  write_xlsx(identity,"/identity.xlsx")
 }
 
 identity2 <- read.xlsx(file = 'identity.xlsx', 1, header=TRUE)
 
-#pozitif etkileþimlerden, her bir sars proteini ile kaç tane insan proteinin etkileþime girdiðini tutan veri
-#okunur. bu bir sars proteini ile kaç tane pozitif etkileþim varsa o kadar negatif etkileþim verisi oluþturmak için
+#From positive interactions, data is read that captures how many human proteins interact with each Sars protein. 
+#This is to generate as many negative interaction data as there are positive interactions with a sars protein.
 library("readxl")
 etkilesimSayi <- read.xlsx(file = 'Proteinler.xlsx', 7, header=TRUE)
 
-#örneðin sars cov 2 e ile etkileþimli 6 insan proteini var. Bu durumda 6 negatif protein bulunacak. identity
-#matrisindeki ilk 6 satýr, cov2 e ile etikleþimli proteinlerin aday proteinler ile benzerliðini içerir.
-#o 6 satýr protein matrisine alýndý. Amaç cov2 e ile en düþük ortalama benzerliðe sahip 6 aday proteini belirlemek
-#protein matrsinde her bir sütunun ortalamasý hesaplanýr. min ilk 6 hücrenin sütun isimleri, sars cov2 e ile
-#etkileþimsiz olarak etiketlenir.
+#For example, there are 6 human proteins that interact with the SARS CoV 2 E protein. In this case, there will be 6 negative proteins. 
+#The first 6 rows in the identity matrix contain the similarity of proteins interacting with cov2 e to candidate proteins. This 6 rows were taken into the protein matrix. 
+#The aim is to determine the 6 candidate proteins with the lowest average similarity to cov2 e. The average of each column in the protein matrix is calculated. 
+#Column names of min first 6 cells are labeled as non-interactive with sars cov2 e.
 negatifProtein = matrix(NA,nrow=332,ncol=2)
 indis=1
 for (j in 1:length(etkilesimSayi))
@@ -93,10 +90,10 @@ for (j in 1:length(etkilesimSayi))
   }
   protein=NULL
 }
-#negatifProtein matrisinde ilk sütun proteinler 2. sütun ortalama benzerliklerdir.
+#In the negative protein matrix, the first column is proteins, the 2nd column is average similarities.
 
 negatifProtein <- data.frame(negatifProtein)
-write_xlsx(negatifProtein,"C:/Users/zeyne/Desktop/negatifData.xlsx")
+write_xlsx(negatifProtein,"negatifData.xlsx")
 
 
 
